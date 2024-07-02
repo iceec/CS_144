@@ -121,8 +121,8 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     _timer._now_time += ms_since_last_tick;
 
     if (_timer._now_time >= _timer._retx_timeout) {
-        _segments_out.push(_retransmission_queue.front());
-
+        TCPSegment tmp =_retransmission_queue.front();
+        _segments_out.push(tmp);
         if (_window_size) {
             size_t double_timeout = _timer._retx_timeout * 2;
 
