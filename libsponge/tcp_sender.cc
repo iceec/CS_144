@@ -33,10 +33,11 @@ void TCPSender::fill_window() {
     if (_next_seqno == 0) {
         TCPSegment package;
         package.header().syn = true;
-        package.header().seqno = _isn;
+        package.header().seqno = wrap(_next_seqno,_isn);
         _segments_out.push(package);
         _retransmission_queue.push(package);
         _next_seqno += package.length_in_sequence_space();
+        _timer._on = true;
         return;
     }
 
@@ -55,7 +56,7 @@ void TCPSender::fill_window() {
 
         package.header().seqno = wrap(_next_seqno, _isn);
 
-        package.payload() = Buffer(std::move(payload));
+        package.payload() = std::move(payload);
 
         _next_seqno += package.length_in_sequence_space();
 
@@ -116,13 +117,12 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     if (_timer._on == false)
         return;
 
-    assert(_retransmission_queue.size());
+    //assert(_retransmission_queue.size());
 
     _timer._now_time += ms_since_last_tick;
 
     if (_timer._now_time >= _timer._retx_timeout) {
-        TCPSegment tmp =_retransmission_queue.front();
-        _segments_out.push(tmp);
+        _segments_out.push(_retransmission_queue.front());
         if (_window_size) {
             size_t double_timeout = _timer._retx_timeout * 2;
 
@@ -131,7 +131,6 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
 
             _timer._retx_times += 1;
         }
-
         _timer._now_time = 0;
     }
 }

@@ -17,7 +17,9 @@ struct Retransmission_Timer
   size_t _retx_timeout{0};  // RTO
   uint16_t _retx_times{0};
   size_t _now_time{0};
-  bool _on{true};
+  bool _on{false};
+   // retransmission queue
+  
 
   Retransmission_Timer(){};
   Retransmission_Timer(uint16_t init):_retx_timeout(init){}
@@ -46,11 +48,12 @@ class TCPSender {
 
     Retransmission_Timer _timer;
 
+    std::queue<TCPSegment> _retransmission_queue{};
+
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
-    // retransmission queue
-    std::queue<TCPSegment> _retransmission_queue{};
+   
 
     uint64_t _ack_ab_seqno{0};
 
