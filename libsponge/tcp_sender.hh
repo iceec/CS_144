@@ -9,6 +9,21 @@
 #include <functional>
 #include <queue>
 
+
+
+struct Retransmission_Timer
+{
+
+  size_t _retx_timeout{0};  // RTO
+  uint16_t _retx_times{0};
+  size_t _now_time{0};
+  bool _on{true};
+
+  Retransmission_Timer(){};
+  Retransmission_Timer(uint16_t init):_retx_timeout(init){}
+};
+
+
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -29,8 +44,21 @@ class TCPSender {
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
+    Retransmission_Timer _timer;
+
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    // retransmission queue
+    std::queue<TCPSegment> _retransmission_queue{};
+
+    uint64_t _ack_ab_seqno{0};
+
+    uint16_t _window_size{1};
+
+    bool _send_fin{false};
+
+
 
   public:
     //! Initialize a TCPSender
