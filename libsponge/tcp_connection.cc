@@ -31,32 +31,20 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     _time_since_last_segment_received = 0;
 
     // if 收到了 rst 直接关闭连接
-    if (seg.header().rst)
-    {
+    if (seg.header().rst) {
         handle_RST(false);
-        return ;
+        return;
     }
-
-      // if 收到了ack  交给_sender
-    if (seg.header().ack) {
-        // 会进行fill window
-        _sender.ack_received(seg.header().ackno, seg.header().win);
-        // 有ack 非空 但是无效的 这个时候要加上一个空的包  to do
-    }
-
 
     string recviver_status = TCPState::state_summary(_receiver);
     string sender_status = TCPState::state_summary(_sender);
 
     // recv syn  close ->  recv syn synsent 因为上一步的if 不会进入
     // 因为if 来到这一步的话 本身就是没有ack的 所以不耽误
-    if (recviver_status == TCPReceiverStateSummary::SYN_RECV && sender_status == TCPSenderStateSummary::CLOSED)
-    {
+    if (recviver_status == TCPReceiverStateSummary::SYN_RECV && sender_status == TCPSenderStateSummary::CLOSED) {
         connect();
         return;
     }
-
-        
 
     // 先收到了 fin  那么我就不需要time_wait 了
     // 这一步 不能先接受 if 先接受的话 那么
@@ -64,19 +52,25 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         _linger_after_streams_finish = false;
     }
 
-  
+    // if 收到了ack  交给_sender
+    if (seg.header().ack) {
+        // 会进行fill window
+        _sender.ack_received(seg.header().ackno, seg.header().win);
+        // 有ack 非空 但是无效的 这个时候要加上一个空的包  to do
+    }
 
-   // sender_status = TCPState::state_summary(_sender);
+
+
+     sender_status = TCPState::state_summary(_sender);
 
     // 这个时候是要接受完sender才可以判断的
-    if (recviver_status == TCPReceiverStateSummary::FIN_RECV &&
-     sender_status == TCPSenderStateSummary::FIN_ACKED &&
+    if (recviver_status == TCPReceiverStateSummary::FIN_RECV && sender_status == TCPSenderStateSummary::FIN_ACKED &&
         _linger_after_streams_finish == false) {
         _active = false;
     }
 
     if (seg.length_in_sequence_space() != 0 && _sender.segments_out().size() == 0)
-            _sender.send_empty_segment();
+        _sender.send_empty_segment();
 
     send_TCPsegmet();
 }
@@ -114,8 +108,8 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
 }
 
 void TCPConnection::end_input_stream() {
-    if(_active ==false)
-        return ;
+    if (_active == false)
+        return;
     _sender.stream_in().end_input();
 
     _sender.fill_window();
@@ -127,8 +121,8 @@ void TCPConnection::connect() {
     if (_active == false)
         return;
     assert(_sender.segments_out().empty());
-        _sender.fill_window();
-    
+    _sender.fill_window();
+
     send_TCPsegmet();
 }
 
@@ -149,15 +143,14 @@ void TCPConnection::send_TCPsegmet() {
     while (_sender.segments_out().size()) {
         auto ackno = _receiver.ackno();
 
-        TCPSegment & package = _sender.segments_out().front();
-         _sender.segments_out().pop();
+        TCPSegment &package = _sender.segments_out().front();
+        _sender.segments_out().pop();
         if (ackno.has_value()) {
             package.header().ack = true;
             package.header().ackno = ackno.value();
             package.header().win = _receiver.window_size();
         }
         _segments_out.push(package);
-       
     }
 }
 
@@ -166,14 +159,14 @@ void TCPConnection::handle_RST(bool send_to_peer) {
         if (_sender.segments_out().size() == 0)
             _sender.send_empty_segment();
 
-        TCPSegment & package = _sender.segments_out().front();
+        TCPSegment &package = _sender.segments_out().front();
 
         package.header().rst = true;
         _segments_out.push(package);
         _sender.segments_out().pop();
     }
     _active = false;
-    _linger_after_streams_finish =false;
+    _linger_after_streams_finish = false;
     _sender.stream_in().set_error();
     _receiver.stream_out().set_error();
 }

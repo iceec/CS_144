@@ -1,4 +1,5 @@
-#include "socket.hh"
+
+#include "tcp_sponge_socket.hh"
 #include "util.hh"
 
 #include <cstdlib>
@@ -16,7 +17,7 @@ void get_URL(const string &host, const string &path) {
     // Then you'll need to print out everything the server sends back,
     // (not just one call to read() -- everything) until you reach
     // the "eof" (end of file).
-    TCPSocket client_socket;
+    CS144TCPSocket client_socket;
 
     client_socket.connect(Address(host,"http"));
 

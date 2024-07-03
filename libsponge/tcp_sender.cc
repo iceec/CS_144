@@ -33,7 +33,7 @@ void TCPSender::fill_window() {
     if (_next_seqno == 0) {
         TCPSegment package;
         package.header().syn = true;
-        package.header().seqno = wrap(_next_seqno,_isn);
+        package.header().seqno = wrap(_next_seqno, _isn);
         _segments_out.push(package);
         _retransmission_queue.push(package);
         _next_seqno += package.length_in_sequence_space();
@@ -91,14 +91,13 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     size_t before_retrans_size = _retransmission_queue.size();
 
     uint64_t front_ab_seqno;
-    
+
     while (_retransmission_queue.size()) {
+        front_ab_seqno = unwrap(_retransmission_queue.front().header().seqno, _isn, _ack_ab_seqno);
 
-        front_ab_seqno = unwrap(_retransmission_queue.front().header().seqno,_isn,_ack_ab_seqno);
-
-        if(front_ab_seqno + _retransmission_queue.front().length_in_sequence_space() > _ack_ab_seqno)
+        if (front_ab_seqno + _retransmission_queue.front().length_in_sequence_space() > _ack_ab_seqno)
             break;
-        
+
         _retransmission_queue.pop();
     }
 
@@ -117,7 +116,7 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     if (_timer._on == false)
         return;
 
-    //assert(_retransmission_queue.size());
+    // assert(_retransmission_queue.size());
 
     _timer._now_time += ms_since_last_tick;
 
